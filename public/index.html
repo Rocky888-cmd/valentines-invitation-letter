@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -47,6 +47,7 @@
       font-size:16px;
       opacity:.9;
     }
+
     .stage{
       position:relative;
       height:260px;
@@ -57,11 +58,13 @@
       display:flex;
       align-items:center;
       justify-content:center;
+      perspective: 900px; /* helps 3D feel */
     }
     .buttons{
       position:absolute;
       inset:0;
     }
+
     button{
       border:none;
       padding:14px 18px;
@@ -72,10 +75,14 @@
       user-select:none;
       -webkit-tap-highlight-color: transparent;
       box-shadow: 0 10px 25px rgba(0,0,0,.18);
-      transition: transform .12s ease;
       position:absolute;
+
+      /* Smooth 3D movement */
+      will-change: transform;
+      transform-style: preserve-3d;
     }
     button:active{ transform: scale(.96); }
+
     #yesBtn{
       background:var(--yes);
       color:white;
@@ -83,12 +90,29 @@
       top:60%;
       transform: translate(-50%, -50%);
     }
+
+    /* We keep No anchored at center via left/top, then move using translate3d */
     #noBtn{
       background:var(--no);
       color:white;
       left:50%;
       top:78%;
-      transform: translate(-50%, -50%);
+
+      /* start centered */
+      transform: translate3d(-50%, -50%, 0) rotateX(0deg) rotateY(0deg);
+      transition:
+        transform 650ms cubic-bezier(.16,1,.3,1), /* glide */
+        filter 250ms ease,
+        box-shadow 250ms ease;
+    }
+
+    /* Extra floating feel when your cursor is near (desktop) */
+    #noBtn.floating{
+      animation: hoverFloat 1.8s ease-in-out infinite;
+    }
+    @keyframes hoverFloat{
+      0%,100% { transform: var(--t) translateZ(0px); }
+      50%     { transform: var(--t) translateZ(18px); }
     }
 
     .result{
@@ -135,38 +159,66 @@
     const yesBtn = document.getElementById("yesBtn");
     const result = document.getElementById("result");
 
-    // Place "No" somewhere random inside the stage (safe margins)
-    function moveNoButton() {
+    // Keep track of current "target" translate for smoother feel
+    let tx = 0, ty = 0, rz = 0, rx = 0, ry = 0;
+
+    function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
+
+    function moveNoButtonSmooth() {
       const s = stage.getBoundingClientRect();
       const b = noBtn.getBoundingClientRect();
 
-      const pad = 12; // keep away from edges
-      const maxX = s.width  - b.width  - pad;
-      const maxY = s.height - b.height - pad;
+      // available space inside stage (leave margins)
+      const pad = 14;
+      const maxX = (s.width  - b.width)  / 2 - pad; // since anchored at center
+      const maxY = (s.height - b.height) / 2 - pad;
 
-      const x = pad + Math.random() * Math.max(1, maxX);
-      const y = pad + Math.random() * Math.max(1, maxY);
+      // random target translate from center
+      tx = (Math.random() * 2 - 1) * Math.max(10, maxX);
+      ty = (Math.random() * 2 - 1) * Math.max(10, maxY);
 
-      // set absolute position inside stage
-      noBtn.style.left = x + "px";
-      noBtn.style.top  = y + "px";
-      noBtn.style.transform = "translate(0,0)";
+      // add some playful 3D tilts
+      rz = (Math.random() * 18 - 9);   // -9..9 deg
+      rx = (Math.random() * 14 - 7);   // -7..7 deg
+      ry = (Math.random() * 18 - 9);   // -9..9 deg
+
+      // Store the base transform in a CSS variable so hoverFloat can use it
+      const base = `translate3d(calc(-50% + ${tx}px), calc(-50% + ${ty}px), 0px) rotateZ(${rz}deg) rotateX(${rx}deg) rotateY(${ry}deg)`;
+      noBtn.style.setProperty("--t", base);
+      noBtn.style.transform = base;
+
+      // kick the floating animation briefly
+      noBtn.classList.add("floating");
+      clearTimeout(noBtn._floatTimer);
+      noBtn._floatTimer = setTimeout(()=> noBtn.classList.remove("floating"), 1200);
     }
 
-    // For desktop: run away on hover
-    noBtn.addEventListener("mouseenter", moveNoButton);
+    // Desktop: run away when cursor gets close (not instant)
+    noBtn.addEventListener("mouseenter", moveNoButtonSmooth);
 
-    // For mobile: run away when user tries to tap/press it
-    // pointerdown triggers BEFORE click (so it escapes)
-    noBtn.addEventListener("pointerdown", (e) => {
-      e.preventDefault(); // block click
-      moveNoButton();
+    // Mobile: if finger comes near, it glides away
+    stage.addEventListener("pointermove", (e) => {
+      // Only react if pointer is near the no button
+      const b = noBtn.getBoundingClientRect();
+      const dx = e.clientX - (b.left + b.width/2);
+      const dy = e.clientY - (b.top  + b.height/2);
+      const dist = Math.hypot(dx, dy);
+
+      // Distance threshold: adjust for "hard to catch"
+      if(dist < 90){
+        moveNoButtonSmooth();
+      }
     });
 
-    // If somehow clicked, still escape
+    // If user tries to press No, escape
+    noBtn.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      moveNoButtonSmooth();
+    });
+
     noBtn.addEventListener("click", (e) => {
       e.preventDefault();
-      moveNoButton();
+      moveNoButtonSmooth();
     });
 
     // YES button works
@@ -177,7 +229,6 @@
       popHearts();
     });
 
-    // Cute hearts effect
     function popHearts(){
       const emojis = ["💖","💘","🥰","🫶","💕","💗"];
       for(let i=0;i<18;i++){
@@ -193,8 +244,8 @@
       }
     }
 
-    // Initial random offset so "No" isn't perfectly centered
-    moveNoButton();
+    // Start with a gentle move so it already feels alive
+    moveNoButtonSmooth();
   </script>
 </body>
 </html>
