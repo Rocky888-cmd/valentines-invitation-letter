@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Valentine 💖</title>
+
+  <style>
+    :root{
+      --pink1:#ffd6e7;
+      --pink2:#ff9fc3;
+      --card:#ffffffde;
+      --text:#2b2b2b;
+      --yes:#22c55e;
+      --no:#ef4444;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(circle at top, var(--pink1), var(--pink2));
+      overflow:hidden;
+      padding:18px;
+      color:var(--text);
+    }
+
+    /* floating hearts background */
+    .hearts{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      overflow:hidden;
+      z-index:0;
+    }
+    .heart{
+      position:absolute;
+      opacity:.35;
+      animation: float 10s linear infinite;
+      font-size: 18px;
+      filter: blur(.2px);
+    }
+    @keyframes float{
+      0%   { transform: translateY(110vh) translateX(0) rotate(0deg); }
+      100% { transform: translateY(-30vh) translateX(50px) rotate(360deg); }
+    }
+
+    .card{
+      width:min(520px, 96vw);
+      background:var(--card);
+      border-radius:22px;
+      box-shadow:0 24px 70px rgba(0,0,0,.18);
+      padding:20px 18px 18px;
+      text-align:center;
+      position:relative;
+      z-index:2;
+      backdrop-filter: blur(10px);
+      border:1px solid rgba(255,255,255,.55);
+    }
+    .title{
+      font-size: 30px;
+      font-weight: 900;
+      margin: 4px 0 8px;
+      color:#ff4d8d;
+      letter-spacing:.3px;
+    }
+    .subtitle{
+      font-size: 18px;
+      font-weight:700;
+      margin: 8px 0 16px;
+      opacity:.9;
+    }
+
+    .gifBox{
+      width:100%;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      padding:8px 0 4px;
+    }
+    .gifBox img{
+      width:min(300px, 78vw);
+      height:auto;
+      border-radius: 16px;
+      box-shadow:0 14px 40px rgba(0,0,0,.12);
+      background:#fff;
+    }
+
+    .question{
+      margin: 12px 0 16px;
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    /* Buttons row: perfectly aligned */
+    .btnRow{
+      display:flex;
+      justify-content:center;
+      gap:14px;
+      margin-top: 6px;
+      position:relative;
+      height:64px; /* room for escape animation */
+    }
+    .btn{
+      border:none;
+      padding: 14px 22px;
+      font-size:18px;
+      font-weight:900;
+      border-radius: 999px;
+      cursor:pointer;
+      color:white;
+      box-shadow:0 14px 30px rgba(0,0,0,.14);
+      transition: transform .14s ease, filter .2s ease;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+      min-width: 110px;
+    }
+    .btn:active{ transform: scale(.96); }
+
+    #yesBtn{ background: var(--yes); }
+    #noBtn{
+      background: var(--no);
+      position:absolute; /* so it can escape */
+      left: calc(50% + 70px); /* start aligned next to yes */
+      top: 0px;
+      transform: translateX(-50%);
+      transition: transform 650ms cubic-bezier(.16,1,.3,1);
+      will-change: transform;
+    }
+
+    .hint{
+      margin-top:10px;
+      font-size: 12px;
+      opacity:.65;
+    }
+
+    /* Final screen sparkle burst */
+    .burst{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      overflow:hidden;
+      z-index:3;
+      display:none;
+    }
+    .spark{
+      position:absolute;
+      font-size: 18px;
+      animation: burst 1.3s ease-out forwards;
+      opacity:.9;
+    }
+    @keyframes burst{
+      from{ transform: translate(0,0) scale(.9); opacity:1; }
+      to{ transform: translate(var(--dx), var(--dy)) scale(1.2); opacity:0; }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- floating hearts background -->
+  <div class="hearts" id="hearts"></div>
+
+  <div class="card">
+    <div class="burst" id="burst"></div>
+
+    <div class="title" id="title">Hey Cutie!</div>
+
+    <div class="gifBox">
+      <img id="mainGif" src="gifs/giving-flower.gif" alt="Valentine gif">
+    </div>
+
+    <div class="subtitle" id="subtitle">Hi cutie, <span id="name">HerName</span> 💗</div>
+    <div class="question" id="question">Will you be my Valentine?</div>
+
+    <div class="btnRow" id="btnRow">
+      <button class="btn" id="yesBtn">Yes</button>
+      <button class="btn" id="noBtn">No</button>
+    </div>
+
+    <div class="hint" id="hint">(*No button is shy 😅*)</div>
+  </div>
+
+<script>
+  // ====== CONFIG (change these paths + name) ======
+  const HER_NAME = "Amily"; // <-- change name here
+
+  const GIFS = {
+    flowers: "gifs/giving-flower.gif", // step 1
+    cry:     "gifs/crying-biting.gif",     // no attempt #1
+    beg:     "gifs/crying.gif",     // no attempt #2
+    table:   "gifs/crying-and-smashing.gif",   // no attempt #3
+    kiss:    "gifs/kissing.gif"     // yes -> final
+  };
+
+  // ====== ELEMENTS ======
+  const nameEl = document.getElementById("name");
+  const mainGif = document.getElementById("mainGif");
+  const titleEl = document.getElementById("title");
+  const subtitleEl = document.getElementById("subtitle");
+  const questionEl = document.getElementById("question");
+  const hintEl = document.getElementById("hint");
+
+  const stage = document.getElementById("btnRow");
+  const noBtn = document.getElementById("noBtn");
+  const yesBtn = document.getElementById("yesBtn");
+  const burst = document.getElementById("burst");
+
+  nameEl.textContent = HER_NAME;
+
+  // ====== hearts background generator ======
+  const heartsWrap = document.getElementById("hearts");
+  const heartEmojis = ["💗","💖","💕","💘","❤️","💞"];
+  function spawnHeart(){
+    const h = document.createElement("div");
+    h.className = "heart";
+    h.textContent = heartEmojis[Math.floor(Math.random()*heartEmojis.length)];
+    h.style.left = Math.random()*100 + "vw";
+    h.style.fontSize = (14 + Math.random()*24) + "px";
+    h.style.animationDuration = (7 + Math.random()*8) + "s";
+    h.style.opacity = (0.18 + Math.random()*0.35).toFixed(2);
+    heartsWrap.appendChild(h);
+    setTimeout(()=>h.remove(), 16000);
+  }
+  setInterval(spawnHeart, 220);
+  for(let i=0;i<18;i++) spawnHeart();
+
+  // ====== NO logic (only escapes when trying to click) ======
+  let noAttempts = 0;
+
+  function setMoodByAttempts(){
+    if(noAttempts === 0){
+      mainGif.src = GIFS.flowers;
+      titleEl.textContent = "Hey Cutie!";
+      subtitleEl.innerHTML = `Hi cutie, <span id="name">${HER_NAME}</span> 💗`;
+      questionEl.textContent = "Will you be my Valentine?";
+      hintEl.textContent = "(*No button is shy 😅*)";
+    } else if(noAttempts === 1){
+      mainGif.src = GIFS.cry;
+      questionEl.textContent = "Aww… why no? 🥺";
+      hintEl.textContent = "Try again… 😭";
+    } else if(noAttempts === 2){
+      mainGif.src = GIFS.beg;
+      questionEl.textContent = "Pleaseeee… 🫶";
+      hintEl.textContent = "Don’t do this to me 😩";
+    } else if(noAttempts === 3){
+      mainGif.src = GIFS.table;
+      questionEl.textContent = "WHY!!!! 😭😭😭 ";
+      hintEl.textContent = "Okay okay…";
+    } else {
+      mainGif.src = GIFS.beg;
+      questionEl.textContent = "Begging please… ";
+      hintEl.textContent = "Just press YES 😘";
+    }
+  }
+
+  // Smooth escape movement (not teleport)
+  function escapeNoButton(){
+    const s = stage.getBoundingClientRect();
+    const b = noBtn.getBoundingClientRect();
+
+    // Compute available within btnRow area
+    const pad = 6;
+    const maxX = s.width - b.width - pad;
+    const maxY = s.height - b.height - pad;
+
+    const x = pad + Math.random() * Math.max(1, maxX);
+    const y = pad + Math.random() * Math.max(1, maxY);
+
+    // Move with translate (glide)
+    noBtn.style.transform = `translate(${x - s.width/2 + b.width/2}px, ${y}px)`;
+  }
+
+  // Escape ONLY when trying to click/tap the NO button
+  noBtn.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    noAttempts++;
+    setMoodByAttempts();
+    escapeNoButton();
+  });
+
+  noBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    noAttempts++;
+    setMoodByAttempts();
+    escapeNoButton();
+  });
+
+  // Also if mouse hovers directly over the No (desktop)
+  noBtn.addEventListener("mouseenter", () => {
+    noAttempts++;
+    setMoodByAttempts();
+    escapeNoButton();
+  });
+
+  // ====== YES final screen ======
+  function makeBurst(){
+    burst.innerHTML = "";
+    burst.style.display = "block";
+    const items = ["✨","💖","💘","🫶","🌟","💞","🎉","🥰"];
+    const box = burst.getBoundingClientRect();
+    for(let i=0;i<38;i++){
+      const s = document.createElement("div");
+      s.className = "spark";
+      s.textContent = items[Math.floor(Math.random()*items.length)];
+      s.style.left = (box.width/2) + "px";
+      s.style.top  = (box.height/2) + "px";
+      s.style.setProperty("--dx", (Math.random()*420 - 210) + "px");
+      s.style.setProperty("--dy", (Math.random()*360 - 180) + "px");
+      s.style.fontSize = (16 + Math.random()*20) + "px";
+      burst.appendChild(s);
+    }
+    setTimeout(()=> burst.style.display="none", 1400);
+  }
+
+  yesBtn.addEventListener("click", () => {
+    titleEl.textContent = "Yay! Happy Valentine’s Day! 💝";
+    subtitleEl.textContent = "";
+    questionEl.textContent = "I love you so much! 💗✨";
+    hintEl.textContent = "";
+
+    mainGif.src = GIFS.kiss;
+
+    // hide buttons
+    yesBtn.style.display = "none";
+    noBtn.style.display = "none";
+
+    makeBurst();
+  });
+
+  // Init
+  mainGif.src = GIFS.flowers;
+  setMoodByAttempts();
+</script>
+
+</body>
+</html>
