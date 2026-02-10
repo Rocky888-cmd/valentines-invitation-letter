@@ -14,22 +14,14 @@
         --yes: #22c55e;
         --no: #ef4444;
       }
-      * {
-        box-sizing: border-box;
-      }
+      * { box-sizing: border-box; }
       body {
         margin: 0;
         min-height: 100vh;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-family:
-          system-ui,
-          -apple-system,
-          Segoe UI,
-          Roboto,
-          Arial,
-          sans-serif;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
         background: radial-gradient(circle at top, var(--pink1), var(--pink2));
         overflow: hidden;
         padding: 18px;
@@ -52,12 +44,8 @@
         filter: blur(0.2px);
       }
       @keyframes float {
-        0% {
-          transform: translateY(110vh) translateX(0) rotate(0deg);
-        }
-        100% {
-          transform: translateY(-30vh) translateX(50px) rotate(360deg);
-        }
+        0% { transform: translateY(110vh) translateX(0) rotate(0deg); }
+        100% { transform: translateY(-30vh) translateX(50px) rotate(360deg); }
       }
 
       .card {
@@ -107,7 +95,7 @@
         font-weight: 800;
       }
 
-      /* ✅ Buttons: perfectly aligned by default */
+      /* Buttons aligned */
       .btnRow {
         display: flex;
         justify-content: center;
@@ -115,7 +103,7 @@
         gap: 12px;
         margin-top: 6px;
         position: relative;
-        height: 74px; /* room for escape */
+        height: 74px;
       }
 
       .btn {
@@ -127,26 +115,19 @@
         cursor: pointer;
         color: white;
         box-shadow: 0 14px 30px rgba(0, 0, 0, 0.14);
-        transition:
-          transform 650ms cubic-bezier(0.16, 1, 0.3, 1),
-          filter 0.2s ease;
+        transition: transform 650ms cubic-bezier(0.16, 1, 0.3, 1), filter 0.2s ease, opacity 0.3s ease;
         user-select: none;
         -webkit-tap-highlight-color: transparent;
         min-width: 120px;
         will-change: transform;
       }
-      .btn:active {
-        transform: scale(0.96);
-      }
+      .btn:active { transform: scale(0.96); }
 
-      #yesBtn {
-        background: var(--yes);
-        transform: scale(1);
-      }
+      #yesBtn { background: var(--yes); transform: scale(1); }
 
       #noBtn {
         background: var(--no);
-        position: relative; /* ✅ starts as flex item */
+        position: relative; /* starts aligned */
         transform: translate(0, 0) scale(1);
       }
 
@@ -179,14 +160,8 @@
         opacity: 0.9;
       }
       @keyframes burst {
-        from {
-          transform: translate(0, 0) scale(0.9);
-          opacity: 1;
-        }
-        to {
-          transform: translate(var(--dx), var(--dy)) scale(1.2);
-          opacity: 0;
-        }
+        from { transform: translate(0, 0) scale(0.9); opacity: 1; }
+        to { transform: translate(var(--dx), var(--dy)) scale(1.2); opacity: 0; }
       }
     </style>
   </head>
@@ -197,14 +172,14 @@
     <div class="card">
       <div class="burst" id="burst"></div>
 
-      <div class="title" id="title">Hey Cutie!</div>
+      <div class="title" id="title">Hi Crush!</div>
 
       <div class="gifBox">
         <img id="mainGif" src="gifs/giving-flower.gif" alt="Valentine gif" />
       </div>
 
       <div class="subtitle" id="subtitle">
-        Hi cutie, <span id="name">HerName</span> 💗
+        Hi crush, <span id="name">HerName</span> 💗
       </div>
       <div class="question" id="question">Will you be my Valentine?</div>
 
@@ -213,19 +188,17 @@
         <button class="btn" id="noBtn">No</button>
       </div>
 
-      <div class="hint" id="hint">(*No button is shy 😅*)</div>
+      <div class="hint" id="hint">(No button is shy 😅)</div>
     </div>
 
+    <!-- Music (starts after first interaction; autoplay is blocked on phones) -->
     <audio id="bgMusic" loop>
-      <source src="music/im-not-cute-anymore.mp3" type="audio/mp3" />
+      <source src="music/im-not-cute-anymore.mp3" type="audio/mpeg" />
     </audio>
 
     <script>
       // ====== CONFIG ======
-      const HER_NAME = ""; // change name here
-
-      const music = document.getElementById("bgMusic");
-      let musicStarted = false;
+      const HER_NAME = ""; // <- put her name here (optional)
 
       const GIFS = {
         flowers: "gifs/giving-flower.gif",
@@ -234,6 +207,9 @@
         table: "gifs/crying-and-smashing.gif",
         kiss: "gifs/kissing.gif",
       };
+
+      // NO button shrinks each attempt until it disappears
+      const NO_SCALES = [1, 0.85, 0.7, 0.5, 0.3, 0];
 
       // ====== ELEMENTS ======
       const nameEl = document.getElementById("name");
@@ -248,28 +224,35 @@
       const yesBtn = document.getElementById("yesBtn");
       const burst = document.getElementById("burst");
 
-      nameEl.textContent = HER_NAME;
+      // ====== MUSIC ======
+      const music = document.getElementById("bgMusic");
+      let musicStarted = false;
 
       function startMusic() {
         if (!musicStarted) {
-          music.volume = 0.5; // not annoying
+          music.volume = 0.5;
           music.play().catch(() => {});
           musicStarted = true;
         }
       }
-
-      // Start music on first user interaction
       document.addEventListener("pointerdown", startMusic, { once: true });
       document.addEventListener("keydown", startMusic, { once: true });
 
-      // ====== hearts background ======
+      // name
+      if (HER_NAME && HER_NAME.trim().length > 0) {
+        nameEl.textContent = HER_NAME;
+      } else {
+        // hide name if empty
+        subtitleEl.innerHTML = "Hi crush 💗";
+      }
+
+      // ====== HEARTS BACKGROUND ======
       const heartsWrap = document.getElementById("hearts");
       const heartEmojis = ["💗", "💖", "💕", "💘", "❤️", "💞"];
       function spawnHeart() {
         const h = document.createElement("div");
         h.className = "heart";
-        h.textContent =
-          heartEmojis[Math.floor(Math.random() * heartEmojis.length)];
+        h.textContent = heartEmojis[Math.floor(Math.random() * heartEmojis.length)];
         h.style.left = Math.random() * 100 + "vw";
         h.style.fontSize = 14 + Math.random() * 24 + "px";
         h.style.animationDuration = 7 + Math.random() * 8 + "s";
@@ -280,14 +263,13 @@
       setInterval(spawnHeart, 220);
       for (let i = 0; i < 18; i++) spawnHeart();
 
-      // ====== NO logic ======
+      // ====== NO LOGIC ======
       let noAttempts = 0;
 
       function setMoodByAttempts() {
         if (noAttempts === 0) {
           mainGif.src = GIFS.flowers;
           titleEl.textContent = "Hey Cutie!";
-          //subtitleEl.innerHTML = `Hi cutie, <span>${HER_NAME}</span> 💗`;
           questionEl.textContent = "Will you be my Valentine?";
           hintEl.textContent = "(*No button is shy 😅*)";
         } else if (noAttempts === 1) {
@@ -314,17 +296,29 @@
       }
 
       function updateButtonSizes() {
-        // YES grows with every "No"
-        const yesScale = 1 + Math.min(noAttempts, 7) * 0.12;
+        // YES grows a bit each time
+        const yesScale = 1 + Math.min(noAttempts, 6) * 0.1;
         yesBtn.style.transform = `scale(${yesScale})`;
 
-        // After 5 attempts, NO becomes big too
-        if (noAttempts >= 5) {
-          noBtn.style.transform = "translate(0,0) scale(1.25)";
+        // NO shrinks each attempt
+        const noScale = NO_SCALES[Math.min(noAttempts, NO_SCALES.length - 1)];
+
+        if (noScale <= 0) {
+          noBtn.style.opacity = "0";
+          noBtn.style.transform = "scale(0)";
+          setTimeout(() => {
+            noBtn.style.display = "none";
+          }, 180);
+
+          hintEl.textContent = "You have no choice now hahaha 😈 Just press YES!";
+          questionEl.textContent = "Just press YES 💖";
         }
       }
 
       function escapeNoButton() {
+        // If already gone, do nothing
+        if (noBtn.style.display === "none") return;
+
         // Switch to absolute only when escaping
         noBtn.classList.add("fleeing");
 
@@ -342,30 +336,33 @@
         const offsetY = y - s.height / 2 + b.height / 2;
 
         const rot = (Math.random() * 14 - 7).toFixed(1);
-        const scale = noAttempts >= 5 ? 1.25 : 1;
+        const scale = NO_SCALES[Math.min(noAttempts, NO_SCALES.length - 1)];
 
         noBtn.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale}) rotate(${rot}deg)`;
       }
 
       function handleNoAttempt(e) {
+        if (noBtn.style.display === "none") return;
         e.preventDefault();
+
         noAttempts++;
         setMoodByAttempts();
         updateButtonSizes();
         escapeNoButton();
       }
 
-      // Escape ONLY when trying to click/tap/hover NO
+      // Escape only when trying to click/tap/hover NO
       noBtn.addEventListener("pointerdown", handleNoAttempt);
       noBtn.addEventListener("click", handleNoAttempt);
       noBtn.addEventListener("mouseenter", () => {
+        if (noBtn.style.display === "none") return;
         noAttempts++;
         setMoodByAttempts();
         updateButtonSizes();
         escapeNoButton();
       });
 
-      // ====== YES final screen ======
+      // ====== YES FINAL SCREEN ======
       function makeBurst() {
         burst.innerHTML = "";
         burst.style.display = "block";
@@ -399,12 +396,9 @@
         makeBurst();
       });
 
-      // Init
-      mainGif.src = GIFS.flowers;
+      // init
       setMoodByAttempts();
       updateButtonSizes();
     </script>
   </body>
 </html>
-
-
